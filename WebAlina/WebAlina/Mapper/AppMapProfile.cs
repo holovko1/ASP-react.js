@@ -14,6 +14,9 @@ namespace WebAlina.Mapper
             CreateMap<CategoryCreateViewModel, CategoryEntity>()
                 .ForMember(x=>x.Image, opt=>opt.Ignore());
 
+            CreateMap<CategoryEditViewModel, CategoryEntity>()
+                .ForMember(x => x.Image, opt => opt.Ignore());
+
             CreateMap<ProductEntity, ProductItemViewModel>()
                 .ForMember(x => x.CategoryName, opt => 
                     opt.MapFrom(x => x.Category == null ? String.Empty : x.Category.Name))
@@ -22,6 +25,8 @@ namespace WebAlina.Mapper
                         new List<string>() : x.ProductImages.Select(pi=>pi.Image).ToList()));
 
             CreateMap<ProductCreateViewModel, ProductEntity>()
+                .ForMember(x => x.ProductImages, opt => opt.Ignore());
+            CreateMap<ProductEditViewModel, ProductEntity>()
                 .ForMember(x => x.ProductImages, opt => opt.Ignore());
         }
     }

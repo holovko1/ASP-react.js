@@ -6,6 +6,7 @@ using SixLabors.ImageSharp;
 using WebAlina.Data;
 using WebAlina.Data.Entities;
 using WebAlina.Interfaces;
+using WebAlina.Models.Category;
 using WebAlina.Models.Product;
 
 namespace WebAlina.Controllers
@@ -26,6 +27,7 @@ namespace WebAlina.Controllers
             _mapper = mapper;
             _imageHulk = imageHulk;
         }
+
         [HttpGet]
         public async Task<IActionResult> GetList()
         {
@@ -59,6 +61,78 @@ namespace WebAlina.Controllers
                 }
             }
             return Ok(entity.Id);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var product = await _context.Products
+                .Include(x => x.ProductImages)
+                .SingleOrDefaultAsync(c => c.Id == id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            if (product.ProductImages != null)
+            {
+                foreach (var item in product.ProductImages)
+                {
+                    _imageHulk.Delete(item.Image);
+                    _context.ProductImages.Remove(item);
+                }
+                _context.SaveChanges();
+            }
+        
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var category = await _context.Products
+                .ProjectTo<ProductItemViewModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            if (category == null)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Edit([FromForm] ProductCreateViewModel model)
+        {
+            var product = await _context.Products
+                .Include(x => x.ProductImages)
+                .SingleOrDefaultAsync(c => c.Id == model.Id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+            _mapper.Map(model, product);
+            if (product.ProductImages != null)
+            {
+                foreach (var item in product.ProductImages)
+                {
+                    int i = 0;
+                    if (model.Images != null)
+                    {
+                        if (item.Image != null)
+                        {
+                            _imageHulk.Delete(item.Image);
+                        }
+                        item.Image = await _imageHulk.Save(model.Images[i]);
+                    }
+                    i++;
+                }
+            }
+            _context.SaveChanges();
+            return Ok();
         }
     }
 }
